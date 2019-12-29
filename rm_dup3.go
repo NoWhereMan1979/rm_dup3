@@ -10,23 +10,23 @@ import (
 )
 
 var path = flag.String("p", wd, "execution path")
-var regex = flag.String("r", regexStr, "duplicated file names addition pattern regexp. default means \" (digits)\"")
 var mvDest = flag.String("m", movingDestination, "moving destination directory")
 
 var wd = "./"
 var movingDestination = "mvd"
 var regexStr = `\s\([^\d]*(\d+)[^\d]*\)`
 var match = regexp.MustCompile(regexStr)
-var spash = `File name dupplication remover
+var spash = `################### File name dupplication remover ###################
 Chooses most complete files from streamripper dupplicate ripped files.
 Then renames to original file name and moves them to a directory
-Use with -h for usage help`
+Use with -h for usage help
+**********************************************************************`
 
 func main() {
-	fmt.Println(spash)
-	flag.Parse()
+	if err := loadRegex(); err != nil {
+		log.Fatal("error loading regex.bytes", err)
+	}
 	wd = *path
-	regexStr = *regex
 	match = regexp.MustCompile(regexStr)
 	chDir(wd)
 	makeDir(movingDestination)
@@ -126,4 +126,39 @@ func trim(n string) string {
 		n = n[:loc[0]] + n[loc[1]:]
 	}
 	return n
+}
+
+func writeBytes2File() error {
+	file, err := os.OpenFile(
+		"regex.bytes",
+		os.O_WRONLY|os.O_TRUNC|os.O_CREATE,
+		0666,
+	)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	// Write bytes to file
+	byteSlice := []byte(regexStr)
+	bytesWritten, err := file.Write(byteSlice)
+	if err != nil {
+		log.Fatal(err)
+		// return err
+	}
+	log.Printf("Default regex.bytes file created. %d bytes.\n", bytesWritten)
+	return nil
+}
+
+func loadRegex() error {
+	b, err := ioutil.ReadFile("regex.bytes")
+	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Println("regex.bytes file doesn't exist!")
+			return writeBytes2File()
+		}
+		return err
+	}
+	regexStr = string(b)
+	return nil
 }
