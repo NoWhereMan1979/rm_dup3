@@ -23,6 +23,10 @@ Use with -h for usage help
 **********************************************************************`
 
 func main() {
+	flag.Parse()
+	if flag.Arg(1) != "h" {
+		fmt.Println(spash)
+	}
 	if err := loadRegex(); err != nil {
 		log.Fatal("error loading regex.bytes", err)
 	}
